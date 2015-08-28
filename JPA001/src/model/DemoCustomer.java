@@ -3,6 +3,7 @@ package model;
 import java.io.Serializable;
 import javax.persistence.*;
 import java.math.BigDecimal;
+import java.util.List;
 
 
 /**
@@ -10,12 +11,13 @@ import java.math.BigDecimal;
  * 
  */
 @Entity
-@Table(name="DEMO_CUSTOMERS", schema="testdb")
+@Table(name="DEMO_CUSTOMERS",schema="TESTDB")
 @NamedQuery(name="DemoCustomer.findAll", query="SELECT d FROM DemoCustomer d")
 public class DemoCustomer implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	@Id
+	@GeneratedValue(strategy=GenerationType.AUTO)
 	@Column(name="CUSTOMER_ID")
 	private long customerId;
 
@@ -51,6 +53,10 @@ public class DemoCustomer implements Serializable {
 
 	@Column(name="PHONE_NUMBER2")
 	private String phoneNumber2;
+
+	//bi-directional many-to-one association to DemoOrder
+	@OneToMany(mappedBy="demoCustomer")
+	private List<DemoOrder> demoOrders;
 
 	public DemoCustomer() {
 	}
@@ -149,6 +155,28 @@ public class DemoCustomer implements Serializable {
 
 	public void setPhoneNumber2(String phoneNumber2) {
 		this.phoneNumber2 = phoneNumber2;
+	}
+
+	public List<DemoOrder> getDemoOrders() {
+		return this.demoOrders;
+	}
+
+	public void setDemoOrders(List<DemoOrder> demoOrders) {
+		this.demoOrders = demoOrders;
+	}
+
+	public DemoOrder addDemoOrder(DemoOrder demoOrder) {
+		getDemoOrders().add(demoOrder);
+		demoOrder.setDemoCustomer(this);
+
+		return demoOrder;
+	}
+
+	public DemoOrder removeDemoOrder(DemoOrder demoOrder) {
+		getDemoOrders().remove(demoOrder);
+		demoOrder.setDemoCustomer(null);
+
+		return demoOrder;
 	}
 
 }

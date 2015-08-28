@@ -3,8 +3,11 @@
 	<persistence-unit name="JPA001" transaction-type="RESOURCE_LOCAL">
 		<provider>org.eclipse.persistence.jpa.PersistenceProvider</provider>
 		<class>model.DemoCustomer</class>
+		<class>model.DemoOrder</class>
+		<class>model.DemoOrderItem</class>
 		<exclude-unlisted-classes>false</exclude-unlisted-classes>
 		<properties>
+			<property name="eclipselink.exclude-eclipselink-orm" value="false"/>
 			<property name="javax.persistence.jdbc.url" value="jdbc:oracle:thin:@localhost:1521:xe"/>
 			<property name="javax.persistence.jdbc.user" value="system"/>
 			<property name="javax.persistence.jdbc.password" value="password"/>
