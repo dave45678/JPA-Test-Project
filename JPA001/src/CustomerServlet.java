@@ -2,10 +2,12 @@
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.text.SimpleDateFormat;
 import java.util.List;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityTransaction;
+import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -79,19 +81,25 @@ public class CustomerServlet extends HttpServlet {
 	            long total = query.getSingleResult();
 	            if (total>0)
 	            {
-	            	out.printf("%s", "Customer exists");
+	            	out.printf("%s", "<p>Customer exists</p>");
 	            }else{
-	            	out.printf("%s", "Customer does not exist");
+	            	out.printf("%s", "<p>Customer does not exist</p>");
 	            }
+	            
+	            //get the next customerId
+	            Long nextCustomerId = em.createQuery("SELECT MAX(c.customerId) FROM DemoCustomer c", Long.class).getSingleResult();
+	            nextCustomerId += 1L;
+	            out.printf("<p>The next customer id will be %s</p>", nextCustomerId);
 	            
 	          //find with a parameter
 	          
 	           
 	           //add a new customer
-	            //create a new customer class
+	           //create a new customer class
 	            DemoCustomer customer = new DemoCustomer();
-	            customer.setCustFirstName("dave");
-	            customer.setCustLastName("Wolf");
+	            customer.setCustomerId(nextCustomerId);
+	            customer.setCustFirstName("Bart");
+	            customer.setCustLastName("Simpson");
 	           EntityTransaction trans = em.getTransaction();
 	           trans.begin();
 	           try{
@@ -100,7 +108,7 @@ public class CustomerServlet extends HttpServlet {
 	           }catch (Exception e){
 	        	   trans.rollback();
 	           }finally{
-	        	   em.close();
+	        	   //em.close();
 	           }
 	           
 	          
@@ -113,7 +121,7 @@ public class CustomerServlet extends HttpServlet {
 	           //create a new table
 	           
 	           //select from multiple tables
-	            qString = "SELECT o from DemoOrder o";
+	            qString = "SELECT o from DemoOrder o where o.demoCustomer.customerId in (1,3,5)";
 			       TypedQuery<DemoOrder> corders = em.createQuery(qString, DemoOrder.class);
 
 			       List<DemoOrder> cust_orders;
@@ -124,16 +132,48 @@ public class CustomerServlet extends HttpServlet {
 		        	   out.printf("<h3>customer list is null</h3>\r");
 		        	   cust_orders = null;
 		           }
+		           
+		           
+		           // SimpleDateFormat can be used to control the date/time display format:
+		           //   E (day of week): 3E or fewer (in text xxx), >3E (in full text)
+		           //   M (month): M (in number), MM (in number with leading zero)
+		           //              3M: (in text xxx), >3M: (in full text full)
+		           //   h (hour): h, hh (with leading zero)
+		           //   m (minute)
+		           //   s (second)
+		           //   a (AM/PM)
+		           //   H (hour in 0 to 23)
+		           //   z (time zone)
+		           SimpleDateFormat dateFormatter = new SimpleDateFormat("EEEE, MMMM d, yyyy");
+		           
 		           out.print("<h1>Get all orders</h1>\r");
 		           out.printf("<ul>\r");
 		           for (DemoOrder o:cust_orders){
-		        	   out.printf("<li>%s %s placed an order on %s</li>\r", o.getDemoCustomer().getCustFirstName(),o.getDemoCustomer().getCustLastName(),o.getOrderTimestamp());
+		        	   out.printf("<li>%s %s placed an order for $%,5.2f on %s</li>\r", 
+		        			   o.getDemoCustomer().getCustFirstName(),
+		        			   o.getDemoCustomer().getCustLastName(),
+		        			   o.getOrderTotal(),
+		        			   dateFormatter.format(o.getOrderTimestamp()));
 		           }
 		           out.printf("</ul>\r");
 	           
-	           
-	           
-			
+		        //select aggregate functions   
+		           String sql = "SELECT o.orderId, sum(o.orderTotal) from DemoOrder o group by o.orderId";
+		           Query qry = em.createQuery(sql);
+		           List<Object[]> results = qry.getResultList();//returns a list of Object[]
+		           //http://stackoverflow.com/questions/13700565/jpa-query-getresultlist-use-in-a-generic-way
+		           out.printf("<h3>Aggregate Functions</h3>\r");
+		           out.print("<table border='1'>\r");
+		           out.print("<tr><th>OrderId</th><th>Order Total</th></tr>");
+		           for(Object[] result : results){
+		        	   //results[x].object[0]
+		        	  
+		        			Long orderID = (Long)result[0];
+		        			java.math.BigDecimal orderTotal = (java.math.BigDecimal) result[1];
+		        			out.printf("<tr><td>%s</td><td>%s</td></tr>\r",orderID, orderTotal);
+		        		}
+		           out.print("</table>\r");
+		        			
 		}catch(Exception e){
 			System.out.println(e);
 		}finally{
@@ -142,7 +182,7 @@ public class CustomerServlet extends HttpServlet {
 			em.close();
 			
 		}
-			
+		
 	
 	}
 
